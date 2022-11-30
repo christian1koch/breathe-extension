@@ -6,8 +6,10 @@ import { getBaseURLMatchPattern } from "../utils/helpers";
 import { useEffect, useState } from "react";
 import { UrlList } from "./components/UrlList";
 import { PagesService } from "../services/pages.service";
-import { Button } from "antd";
-import { FileAddOutlined } from "@ant-design/icons";
+import { Button, ConfigProvider, Collapse } from "antd";
+import { PlusOutlined } from "@ant-design/icons";
+
+const { Panel } = Collapse;
 
 const PAGELIST = "pageList";
 
@@ -46,27 +48,44 @@ function App() {
 
   function renderPageList() {
     return (
-      <div className="page-list">
-        <h1>
-          Page List{" "}
-          <Button
-            type="default"
-            onClick={addPageToStorage}
-            icon={<FileAddOutlined />}
-          ></Button>
-        </h1>
-        <UrlList pageList={pageList} />
-      </div>
+      <ConfigProvider
+        theme={{
+          token: {
+            colorPrimary: "#87e8de",
+          },
+        }}
+      >
+        <div className="header">
+          <Collapse activeKey={"1"} style={{ minWidth: "300px" }}>
+            <Panel
+              showArrow={false}
+              collapsible="icon"
+              className="panel"
+              header="Page List"
+              key="1"
+              extra={
+                <Button
+                  type="primary"
+                  onClick={addPageToStorage}
+                  icon={<PlusOutlined />}
+                ></Button>
+              }
+            >
+              <UrlList
+                pageList={pageList}
+                onRemoveTag={(page: string) => {
+                  const newPageList = pageList.filter((p) => p !== page);
+                  setPageList(newPageList);
+                }}
+              />
+            </Panel>
+          </Collapse>
+        </div>
+      </ConfigProvider>
     );
   }
 
-  return (
-    <div className="App">
-      <header className="App-header">
-        <div>{renderPageList()}</div>
-      </header>
-    </div>
-  );
+  return <div className="popover-container">{renderPageList()}</div>;
 }
 
 export default App;
