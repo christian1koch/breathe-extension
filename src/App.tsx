@@ -1,64 +1,61 @@
 /// <reference types="chrome" />
 /// <reference types="vite-plugin-svgr/client" />
 
-import logo from "./logo.svg";
 import "./App.css";
-import { getBaseURLMatchPattern } from "../public/utils/helpers";
+import { getBaseURLMatchPattern } from "../utils/helpers";
 import { useEffect, useState } from "react";
+import { UrlList } from "./components/UrlList";
+import { PagesService } from "../services/pages.service";
+import { Button } from "antd";
+import { FileAddOutlined } from "@ant-design/icons";
 
 const PAGELIST = "pageList";
 
-function getLogo() {
-  if (window.chrome) {
-    return window.chrome.runtime.getURL(logo.toString());
-  }
-  return logo;
-}
-
-function addPageToStorage() {
-  let currentUrl: string | undefined;
-  chrome.tabs.query({ active: true, currentWindow: true }, function (tab) {
-    //Be aware that `tab` is an array of Tabs
-    currentUrl = tab[0].url;
-  });
-  let pageList: string[] = [];
-  chrome.storage.sync.get([PAGELIST]).then((res) => {
-    if (currentUrl) {
-      if (res.pageList) {
-        const newMatchPattern = getBaseURLMatchPattern(currentUrl);
-        pageList = res.pageList;
-        pageList.push(newMatchPattern);
-      }
-      pageList.push(getBaseURLMatchPattern(currentUrl));
-      chrome.storage.sync.set({ pageList: pageList }).then(() => {
-        console.log("new page list: ", pageList);
-      });
-    }
-  });
-}
-
 function App() {
   const [pageList, setPageList] = useState<string[]>([]);
+  const [currentUrl, setCurrentUrl] = useState<string>("");
+
+  // create a listener that listens to a new tab being selected
+  chrome.tabs.onActivated.addListener(async () => {
+    console.log("tab activated");
+    const res = await PagesService.getCurrentTabURL();
+    if (res) {
+      setCurrentUrl(res);
+    }
+  });
+
+  async function addPageToStorage() {
+    await PagesService.addNewPage(currentUrl);
+    await fetchPageList();
+  }
 
   useEffect(() => {
     fetchPageList();
-  });
-
-  function fetchPageList() {
-    chrome.storage.sync.get([PAGELIST]).then((res) => {
-      if (res.pageList) {
-        setPageList(res.pageList);
+    PagesService.getCurrentTabURL().then((res) => {
+      console.log(pageList);
+      if (res) {
+        setCurrentUrl(res);
       }
     });
+  }, []);
+
+  async function fetchPageList() {
+    const res = await PagesService.getPageList();
+    res && setPageList(res);
   }
 
   function renderPageList() {
     return (
       <div className="page-list">
-        <h1>Page List</h1>
-        {pageList.map((page) => (
-          <div className="page-item">{page}</div>
-        ))}
+        <h1>
+          Page List{" "}
+          <Button
+            type="default"
+            onClick={addPageToStorage}
+            icon={<FileAddOutlined />}
+          ></Button>
+        </h1>
+        <UrlList pageList={pageList} />
       </div>
     );
   }
@@ -67,7 +64,6 @@ function App() {
     <div className="App">
       <header className="App-header">
         <div>{renderPageList()}</div>
-        <button onClick={addPageToStorage}>Add Page to Script</button>
       </header>
     </div>
   );

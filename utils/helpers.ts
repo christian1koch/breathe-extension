@@ -35,8 +35,11 @@ export function patternToRegExp(pattern: string): RegExp {
 
   return RegExp(reString);
 }
+function removeWwwFromUrl(url: string) {
+  return url.replace("www.", "");
+}
 
 export function getBaseURLMatchPattern(url: string) {
   const urlObj = new URL(url);
-  return `${urlObj.protocol}//*${urlObj.host}/*`;
+  return `${urlObj.protocol}//${urlObj.host}/*`;
 }
