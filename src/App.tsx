@@ -75,6 +75,8 @@ function App() {
                 pageList={pageList}
                 onRemoveTag={(page: string) => {
                   const newPageList = pageList.filter((p) => p !== page);
+                  console.log("page removed: ", page);
+                  console.log("newPageList: ", newPageList);
                   setPageList(newPageList);
                 }}
               />
